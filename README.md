@@ -26,7 +26,7 @@
 Combines 7 proven memory approaches into one bulletproof architecture:
 
 - ✅ **Bulletproof WAL Protocol** — Write-ahead logging survives compaction
-- ✅ **LanceDB Vector Search** — Semantic recall of relevant memories
+- ✅ **LanceDB Vector Search** — Semantic recall via free HuggingFace embeddings
 - ✅ **Git-Notes Knowledge Graph** — Structured decisions, branch-aware
 - ✅ **File-Based Archives** — Human-readable MEMORY.md + daily logs
 - ✅ **Cloud Backup** — Optional SuperMemory sync
@@ -69,7 +69,7 @@ npx elite-longterm-memory today
 | Layer | File/System | Purpose | Persistence |
 |-------|-------------|---------|-------------|
 | 1. Hot RAM | SESSION-STATE.md | Active task context | Survives compaction |
-| 2. Warm Store | LanceDB | Semantic search | Auto-recall |
+| 2. Warm Store | LanceDB | Semantic search (HuggingFace) | Auto-recall |
 | 3. Cold Store | Git-Notes | Structured decisions | Permanent |
 | 4. Archive | MEMORY.md + daily/ | Human-readable | Curated |
 | 5. Cloud | SuperMemory | Cross-device sync | Optional |
@@ -92,10 +92,26 @@ If you respond first and crash before saving, context is lost. WAL ensures durab
 
 | Problem | Cause | Fix |
 |---------|-------|-----|
-| Forgets everything | memory_search disabled | Enable + add OpenAI key |
+| Forgets everything | memory_search disabled | Enable memorySearch in config |
 | Repeats mistakes | Lessons not logged | Write to memory/lessons.md |
 | Sub-agents isolated | No context inheritance | Pass context in task prompt |
 | Facts not captured | No auto-extraction | Use Mem0 (see below) |
+
+## Free Local Embeddings (HuggingFace)
+
+Text embeddings are powered by **all-MiniLM-L6-v2** via `@xenova/transformers`. Runs 100% locally — no API key, no cost.
+
+```javascript
+const { embed, cosineSimilarity } = require('elite-longterm-memory');
+
+// Generate a 384-dim embedding vector
+const vector = await embed("User prefers dark mode");
+
+// Compare two texts
+const a = await embed("I like React");
+const b = await embed("My favorite framework is React");
+console.log(cosineSimilarity(a, b)); // ~0.85
+```
 
 ## Mem0 Integration (Recommended)
 
@@ -125,7 +141,8 @@ Add to `~/.clawdbot/clawdbot.json`:
 {
   "memorySearch": {
     "enabled": true,
-    "provider": "openai",
+    "provider": "huggingface",
+    "model": "Xenova/all-MiniLM-L6-v2",
     "sources": ["memory"]
   }
 }

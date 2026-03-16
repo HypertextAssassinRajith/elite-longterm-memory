@@ -8,8 +8,6 @@ metadata:
   clawdbot:
     emoji: "🧠"
     requires:
-      env:
-        - OPENAI_API_KEY
       plugins:
         - memory-lancedb
 ---
@@ -80,7 +78,7 @@ Active working memory that survives compaction. Write-Ahead Log protocol.
 ### Layer 2: WARM STORE (LanceDB Vectors)
 **From: lancedb-memory**
 
-Semantic search across all memories. Auto-recall injects relevant context.
+Semantic search across all memories using **HuggingFace all-MiniLM-L6-v2** embeddings. Runs locally — no API key required.
 
 ```bash
 # Auto-recall (happens automatically)
@@ -88,6 +86,14 @@ memory_recall query="project status" limit=5
 
 # Manual store
 memory_store text="User prefers dark mode" category="preference" importance=0.9
+```
+
+```javascript
+// Generate embeddings locally (free, no API key)
+const { embed, cosineSimilarity } = require('elite-longterm-memory');
+
+const vec = await embed("User prefers dark mode");
+// → 384-dimensional vector, ready for LanceDB
 ```
 
 ### Layer 3: COLD STORE (Git-Notes Knowledge Graph)
@@ -184,13 +190,16 @@ EOF
 
 ### 2. Enable LanceDB (Warm Store)
 
+Embeddings are generated locally using HuggingFace all-MiniLM-L6-v2 — no API key needed.
+
 In `~/.clawdbot/clawdbot.json`:
 
 ```json
 {
   "memorySearch": {
     "enabled": true,
-    "provider": "openai",
+    "provider": "huggingface",
+    "model": "Xenova/all-MiniLM-L6-v2",
     "sources": ["memory"],
     "minScore": 0.3,
     "maxResults": 10
@@ -308,7 +317,7 @@ Understanding the root causes helps you fix them:
 
 | Failure Mode | Cause | Fix |
 |--------------|-------|-----|
-| Forgets everything | `memory_search` disabled | Enable + add OpenAI key |
+| Forgets everything | `memory_search` disabled | Enable memorySearch in config |
 | Files not loaded | Agent skips reading memory | Add to AGENTS.md rules |
 | Facts not captured | No auto-extraction | Use Mem0 or manual logging |
 | Sub-agents isolated | Don't inherit context | Pass context in task prompt |
@@ -318,13 +327,13 @@ Understanding the root causes helps you fix them:
 
 ### 1. Quick Win: Enable memory_search
 
-If you have an OpenAI key, enable semantic search:
+Enable semantic search using free local HuggingFace embeddings (no API key needed):
 
 ```bash
 clawdbot configure --section web
 ```
 
-This enables vector search over MEMORY.md + memory/*.md files.
+This enables vector search over MEMORY.md + memory/*.md files using all-MiniLM-L6-v2.
 
 ### 2. Recommended: Mem0 Integration
 
@@ -374,7 +383,7 @@ Keep MEMORY.md as a summary (<5KB), link to detailed files.
 | Repeats mistakes | Log every mistake to `memory/lessons.md` |
 | Sub-agents lack context | Include key context in spawn task prompt |
 | Forgets recent work | Strict daily file discipline |
-| Memory search not working | Check `OPENAI_API_KEY` is set |
+| Memory search not working | Check memorySearch is enabled in clawdbot.json |
 
 ## Troubleshooting
 
@@ -391,8 +400,8 @@ Keep MEMORY.md as a summary (<5KB), link to detailed files.
 → Run `git notes push` to sync with remote.
 
 **memory_search returns nothing:**
-→ Check OpenAI API key: `echo $OPENAI_API_KEY`
 → Verify memorySearch enabled in clawdbot.json
+→ Check that `@xenova/transformers` is installed: `npm ls @xenova/transformers`
 
 ---
 
